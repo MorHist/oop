@@ -1,41 +1,32 @@
 using static System.Collections.Specialized.BitVector32;
 using System.Linq;
 using System.ComponentModel;
+using System.Collections.Generic;
 using static Lr1.Station;
 
 namespace Lr1
 {
     public partial class MainForm : Form
     {
-        public MainForm()
-        {
-            InitializeComponent();
-            _stations = new BindingList<Station>() {
-                new Station("Пенза 1", 120, 3020, "+79875634543", 78.6, DateTime.Now, "Володарского 12"),
-                new Station("Пенза 2", 10, 3020, "+79888888883", 234.9, DateTime.Now, "Володарского 13"),
-                new Station("Пенза 3", 12370, 3020, "+71234567890", 13.2, DateTime.Now, "Володарского 14")
-            };
-            Stations.DataSource = _stations;
-            Stations.DisplayMember = "Title";
-        }
-
         /// <summary>
         /// Список станций
         /// </summary>
-        private BindingList<Station> _stations;
+        private Stack<Station> _stations = new Stack<Station>();
+        public MainForm()
+        {
+            InitializeComponent();
+            _stations.Push(new Station("Пенза-1", 120, 3020, "+79875634543", 78.6, DateTime.Now, "Володарского 12"));
+            _stations.Push(new Station("Пенза-2", 10, 3020, "+79888888883", 234.9, DateTime.Now, "Володарского 13"));
+            _stations.Push(new Station("Пенза-3", 12370, 3020, "+71234567890", 13.2, DateTime.Now, "Володарского 14"));
+
+        }
 
         /// <summary>
         /// Метод, вызываемый при загрузке формы
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            DateOfOpening.Format = DateTimePickerFormat.Custom;
-            DateOfOpening.CustomFormat = "dd MM yyyy";
-            MessageBox.Show("Годов и Поршнев 22ВП1\nВариант 3", "Лабораторная работа №1");
-            SetStationInfo();
-        }
+
 
         /// <summary>
         /// Метод проверяет текстбоксы на пустоту
@@ -49,12 +40,10 @@ namespace Lr1
                 {
                     UpdateStationBtn.Enabled = false;
                     AddNewStationBtn.Enabled = false;
-                    Stations.Enabled = false;
                     return;
                 }
             UpdateStationBtn.Enabled = true;
             AddNewStationBtn.Enabled = true;
-            Stations.Enabled = true;
         }
 
         /// <summary>
@@ -62,7 +51,7 @@ namespace Lr1
         /// </summary>
         private void SetInfo()
         {
-            Info.Text = $"Всего станций: {Station.TotalStations}\n{_stations[Stations.SelectedIndex]}";
+            Info.Text = $"Всего станций: {Station.TotalStations}\n{_stations.Peek()}";
         }
 
         /// <summary>
@@ -70,7 +59,28 @@ namespace Lr1
         /// </summary>
         private void SetStationInfo()
         {
-            Station station = _stations[Stations.SelectedIndex];
+
+            Station station = _stations.Peek();
+            if (_stations.Count == 0)
+            {
+                // Если стек пуст, очищаем текстовые поля и деактивируем кнопки
+                Title.Text = station.Title; ;
+                NumberOfSeats.Text = station.NumberOfSeats.ToString();
+                SoldTickets.Text = station.SoldTickets.ToString();
+                Number.Text = station.Number;
+                AverageAttendace.Text = station.AverageAttendace.ToString();
+                DateOfOpening.Value = station.DateOfOpening; // Устанавливаем текущую дату по умолчанию
+                Address.Text = station.Address;
+
+                // Деактивируем кнопки, так как нет данных для отображения
+                UpdateStationBtn.Enabled = false;
+                AddNewStationBtn.Enabled = false;
+
+                // Обновляем информацию о количестве станций
+                Info.Text = "Всего станций: 0\nНет данных для отображения";
+                return;
+            }
+
             Title.Text = station.Title;
             NumberOfSeats.Text = station.NumberOfSeats.ToString();
             SoldTickets.Text = station.SoldTickets.ToString();
@@ -79,6 +89,7 @@ namespace Lr1
             DateOfOpening.Value = station.DateOfOpening;
             Address.Text = station.Address;
             SetInfo();
+            Info.Text += "Количество мест: " + station.NumberOfSeats;
         }
 
         private void Stations_SelectedIndexChanged(object sender, EventArgs e)
@@ -94,10 +105,11 @@ namespace Lr1
         /// <param name="e"></param>
         private void UpdateStationBtn_Click(object sender, EventArgs e)
         {
-            Station station = _stations[Stations.SelectedIndex];
-            station.Title = Title.Text;
+
+            Station station = _stations.Peek();
             try
             {
+                station.Title = Title.Text;
                 station.NumberOfSeats = Convert.ToInt32(NumberOfSeats.Text);
                 station.SoldTickets = Convert.ToInt32(SoldTickets.Text);
                 station.AverageAttendace = Convert.ToDouble(AverageAttendace.Text.Replace('.', ','));
@@ -127,10 +139,10 @@ namespace Lr1
                 MessageBox.Show(ex.Message, "Ошибка");
             }
             station.Address = Address.Text;
-            _stations[Stations.SelectedIndex] = station;
+            TicketsInHex.Text = station.NumberOfSeatsToHex();
+            _stations.Push(station);
             SetInfo();
-            if (FieldsLabels.SelectedIndex >= 0)
-                FieldsLabels_SelectedIndexChanged(FieldsLabels, e);
+            Info.Text += "Количество мест: " + station.NumberOfSeats;
         }
 
         /// <summary>
@@ -142,13 +154,69 @@ namespace Lr1
         private void AddNewStationBtn_Click(object sender, EventArgs e)
         {
             Station station = new Station("Новый вокзал");
-            _stations.Add(station);
-            Stations.SelectedIndex = _stations.Count - 1;
+
+            try
+            {
+                station.Title = Title.Text;
+                station.NumberOfSeats = Convert.ToInt32(NumberOfSeats.Text);
+                station.SoldTickets = Convert.ToInt32(SoldTickets.Text);
+                station.AverageAttendace = Convert.ToDouble(AverageAttendace.Text.Replace('.', ','));
+            }
+            catch (FormatException)
+            {
+                MessageBox.Show("Неправильные числовые данные", "Ошибка");
+                return;
+            }
+            catch (NegativeValueException ex)
+            {
+                MessageBox.Show(ex.Message, "Ошибка");
+                return;
+            }
+            try
+            {
+                station.Number = Number.Text;
+            }
+            catch (WrongNumberFormatException ex)
+            {
+                MessageBox.Show(ex.Message, "Ошибка");
+                return;
+            }
+            try
+            {
+                station.DateOfOpening = DateOfOpening.Value;
+            }
+            catch (InvalidDateOfOpeningException ex)
+            {
+                MessageBox.Show(ex.Message, "Ошибка");
+                return;
+            }
+            station.Address = Address.Text;
+            TicketsInHex.Text = station.NumberOfSeatsToHex();
+            _stations.Push(station);
+            SetInfo();
+            Info.Text += "Количество мест: " + station.NumberOfSeats;
         }
 
-        private void FieldsLabels_SelectedIndexChanged(object sender, EventArgs e)
+
+
+        private void MainForm_Load_1(object sender, EventArgs e)
         {
-            FieldValue.Text = _stations[Stations.SelectedIndex].GetFieldValue((Station.Fields)FieldsLabels.SelectedIndex);
+            DateOfOpening.Format = DateTimePickerFormat.Custom;
+            DateOfOpening.CustomFormat = "dd MMM yyyy";
+            MessageBox.Show("Петряев и Маляев 23ВП1\nВариант 3", "Лабораторная работа №1");
+            SetStationInfo();
+        }
+
+        private void ErrorButton_Click(object sender, EventArgs e)
+        {
+            MyExeption exp = new MyExeption();
+            try 
+            { exp.createExeption(); 
+            }
+            catch (MyDivideByZeroException ex)
+            {
+                MessageBox.Show(ex.Message, "Ошибка");
+            }
         }
     }
 }

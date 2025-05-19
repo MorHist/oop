@@ -15,17 +15,13 @@ namespace Lr1
     /// </summary>
     public class Station
     {
-        public enum Fields
-        {
-            Title,
-            NumberOfSeats,
-            SoldTickets,
-            Number,
-            AverageAttendace,   
-            DateOfOpening,
-            Address
-        }
-
+        private int? _numberOfSeats;
+        private int? _soldTickets;
+        private string _number;
+        private double? _averageAttendace;
+        private DateTime _dateOfOpening;
+        private string _adress;
+        public string _title;
         /// <summary>
         /// Название вокзала
         /// </summary>
@@ -34,7 +30,6 @@ namespace Lr1
         /// <summary>
         /// Количество мест
         /// </summary>
-        private int? _numberOfSeats;
         public int? NumberOfSeats
         {
             get => _numberOfSeats;
@@ -49,7 +44,6 @@ namespace Lr1
         /// <summary>
         /// Количество проданных билетов
         /// </summary>
-        private int? _soldTickets;
         public int? SoldTickets
         {
             get => _soldTickets;
@@ -64,7 +58,6 @@ namespace Lr1
         /// <summary>
         /// Номер вокзала
         /// </summary>
-        private string _number;
         public string Number
         {
             get => _number;
@@ -79,7 +72,6 @@ namespace Lr1
         /// <summary>
         /// Средняя посещаемость
         /// </summary>
-        private double? _averageAttendace;
         public double? AverageAttendace
         {
             get => _averageAttendace;
@@ -94,14 +86,13 @@ namespace Lr1
         /// <summary>
         /// Дата открытия
         /// </summary>
-        private DateTime _dateOfOpening;
         public DateTime DateOfOpening
         {
             get => _dateOfOpening;
             set
             {
                 DateTime currentDate = DateTime.Now;
-                if (value.Year < 1931 || value > currentDate)
+                if (value.Year < 1830 || value > currentDate)
                     throw new InvalidDateOfOpeningException();
                 _dateOfOpening = value;
             }
@@ -181,18 +172,7 @@ namespace Lr1
         /// </summary>
         /// <param name="fieldName">Название поля</param>
         /// <returns></returns>
-        public string? GetFieldValue(Fields fieldName) =>
-            fieldName switch
-            {
-                Fields.Title => Title,
-                Fields.NumberOfSeats => NumberOfSeatsToHex(),
-                Fields.Number => Number,
-                Fields.SoldTickets => SoldTickets.ToString(),
-                Fields.AverageAttendace => AverageAttendace.ToString(),
-                Fields.DateOfOpening => DateOfOpening.ToString("d"),
-                Fields.Address => Address,
-                _ => "",
-            };
+       
 
         /// <summary>
         /// Метод возвращает строковое представление вокзала
@@ -211,6 +191,7 @@ namespace Lr1
             return sb.ToString();
         }
     }
+
 
     /// <summary>
     /// Представляет исключение, возникающее при отрицательном значении числового поля 
