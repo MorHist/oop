@@ -3,21 +3,27 @@ using System.Linq;
 using System.ComponentModel;
 using System.Collections.Generic;
 using static Lr1.Station;
+using static Lr1.StationContainer;
+using System.Drawing.Text;
 
 namespace Lr1
 {
+    
     public partial class MainForm : Form
     {
         /// <summary>
         /// Список станций
         /// </summary>
-        private Stack<Station> _stations = new Stack<Station>();
+        /// 
+
+
+        public StationContainer _stations = new StationContainer();
         public MainForm()
         {
             InitializeComponent();
-            _stations.Push(new Station("Пенза-1", 120, 3020, "+79875634543", 78.6, DateTime.Now, "Володарского 12"));
-            _stations.Push(new Station("Пенза-2", 10, 3020, "+79888888883", 234.9, DateTime.Now, "Володарского 13"));
-            _stations.Push(new Station("Пенза-3", 12370, 3020, "+71234567890", 13.2, DateTime.Now, "Володарского 14"));
+            _stations.AddStation(new Station("Пенза-1", 120, 3020, "+79875634543", 78.6, DateTime.Now, "Володарского 12"));
+            _stations.AddStation(new Station("Пенза-2", 10, 3020, "+79888888883", 234.9, DateTime.Now, "Володарского 13"));
+            _stations.AddStation(new Station("Пенза-3", 12370, 3020, "+71234567890", 13.2, DateTime.Now, "Володарского 14"));
 
         }
 
@@ -61,7 +67,7 @@ namespace Lr1
         {
 
             Station station = _stations.Peek();
-            if (_stations.Count == 0)
+            if (!_stations.AnyStations())
             {
                 // Если стек пуст, очищаем текстовые поля и деактивируем кнопки
                 Title.Text = station.Title; ;
@@ -140,7 +146,7 @@ namespace Lr1
             }
             station.Address = Address.Text;
             TicketsInHex.Text = station.NumberOfSeatsToHex();
-            _stations.Push(station);
+            _stations.AddStation(station);
             SetInfo();
             Info.Text += "Количество мест: " + station.NumberOfSeats;
         }
@@ -153,6 +159,8 @@ namespace Lr1
         /// <param name="e"></param>
         private void AddNewStationBtn_Click(object sender, EventArgs e)
         {
+            
+
             Station station = new Station("Новый вокзал");
 
             try
@@ -192,7 +200,7 @@ namespace Lr1
             }
             station.Address = Address.Text;
             TicketsInHex.Text = station.NumberOfSeatsToHex();
-            _stations.Push(station);
+            _stations.AddStation(station);
             SetInfo();
             Info.Text += "Количество мест: " + station.NumberOfSeats;
         }
@@ -210,13 +218,20 @@ namespace Lr1
         private void ErrorButton_Click(object sender, EventArgs e)
         {
             MyExeption exp = new MyExeption();
-            try 
-            { exp.createExeption(); 
+            try
+            {
+                exp.createExeption();
             }
             catch (MyDivideByZeroException ex)
             {
                 MessageBox.Show(ex.Message, "Ошибка");
             }
+        }
+
+        private void OpenEditFormButton_Click(object sender, EventArgs e)
+        {
+            ContainerForm containerForm = new ContainerForm(_stations);
+            containerForm.Show();
         }
     }
 }
