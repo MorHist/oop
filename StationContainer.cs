@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Lr1
 {
-    internal class StationContainer
+    public class StationContainer
     {
-        private Stack<Station> _stations;
+        public Stack<Station> _stations = new Stack<Station>();
 
         public delegate void StationEventHendler(object sender, StationEventArgs e);
 
@@ -34,19 +34,50 @@ namespace Lr1
             OnStationRemoved(new StationEventArgs { Station = station });
         }
 
-        protected virtual void OnStationAdded(StationEventArgs e)
+        public int CountOfStation(Station station)
         {
-            StationAdded?.Invoke(this, e);
+            return _stations.Count();
         }
 
-        protected virtual void OnStationRemoved(StationEventArgs e) 
+        public bool AnyStations()
+        { 
+            return _stations.Any(); 
+        }
+
+        public Station Peek()
         {
-            StationRemoved?.Invoke(this, e);
+            return _stations.Peek();
+        }
+
+        public void Reverse()
+        {
+            _stations.Reverse(); 
+        }
+
+        public bool EnableEvents { get; set; } = true;
+
+        protected virtual void OnStationAdded(StationEventArgs e)
+        {
+            if (EnableEvents)
+            {
+                StationAdded?.Invoke(this, e);
+            }
+        }
+
+        protected virtual void OnStationRemoved(StationEventArgs e)
+        {
+            if (EnableEvents)
+            {
+                StationRemoved?.Invoke(this, e);
+            }
         }
 
         public Stack<Station> GetAllStations() 
         {
-            return new Stack<Station>(_stations);
+
+            return _stations;
         }
+
+
     }
 }

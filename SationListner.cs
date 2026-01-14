@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Lr1.Station;
 
 namespace Lr1
 {
@@ -17,5 +18,6 @@ namespace Lr1
         {
             Console.WriteLine($"Удаленана станция: {e.Station._title}");
         }
+        
     }
 }

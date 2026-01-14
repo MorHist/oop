@@ -50,6 +50,7 @@
             label8 = new Label();
             TicketsInHex = new TextBox();
             ErrorButton = new Button();
+            OpenEditFormButton = new Button();
             panel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -287,11 +288,22 @@
             ErrorButton.UseVisualStyleBackColor = true;
             ErrorButton.Click += ErrorButton_Click;
             // 
+            // OpenEditFormButton
+            // 
+            OpenEditFormButton.Location = new Point(472, 582);
+            OpenEditFormButton.Name = "OpenEditFormButton";
+            OpenEditFormButton.Size = new Size(136, 36);
+            OpenEditFormButton.TabIndex = 27;
+            OpenEditFormButton.Text = "Редактировать";
+            OpenEditFormButton.UseVisualStyleBackColor = true;
+            OpenEditFormButton.Click += OpenEditFormButton_Click;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(615, 630);
+            Controls.Add(OpenEditFormButton);
             Controls.Add(ErrorButton);
             Controls.Add(panel1);
             Controls.Add(FieldValue);
@@ -346,5 +358,6 @@
         private Label label8;
         private TextBox TicketsInHex;
         private Button ErrorButton;
+        private Button OpenEditFormButton;
     }
 }
