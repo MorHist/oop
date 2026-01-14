@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,11 +15,12 @@ namespace Lr1
     {
         private StationContainer _stationContainer;
         private Random _random = new Random();
+        private StationContainer _testContainer; // Для тестирования производительности
 
         // Конструктор, принимающий StationContainer
         public ContainerForm(StationContainer stationContainer)
         {
-            InitializeComponent(); // ДОЛЖЕН БЫТЬ ТОЛЬКО ОДИН РАЗ
+            InitializeComponent();
 
             _stationContainer = stationContainer;
 
@@ -29,10 +30,12 @@ namespace Lr1
 
             // Инициализация интерфейса
             InitializeDataGridView();
-            InitializeCompareDataGridView(); // Инициализация таблицы сравнения
+            InitializeCompareDataGridView();
             UpdateDataGridView();
             PopulateComboBox();
         }
+
+        #region Инициализация UI
 
         private void InitializeDataGridView()
         {
@@ -50,7 +53,6 @@ namespace Lr1
             dataGridView1.Columns.Add("Address", "Адрес");
         }
 
-        // Метод для инициализации таблицы сравнения
         private void InitializeCompareDataGridView()
         {
             // Проверяем, что dataGridView2 существует
@@ -63,51 +65,27 @@ namespace Lr1
             dataGridView2.AutoGenerateColumns = false;
             dataGridView2.Columns.Clear();
 
-            // Добавление колонок
+            // Добавление колонок для сравнения
             dataGridView2.Columns.Add("TypeColumn", "Тип контейнера");
-            dataGridView2.Columns["TypeColumn"].Width = 200;
+            dataGridView2.Columns["TypeColumn"].Width = 180;
 
-            dataGridView2.Columns.Add("InsertTimeColumn", "Время внесения данных, мс");
-            dataGridView2.Columns["InsertTimeColumn"].Width = 150;
+            dataGridView2.Columns.Add("InsertTimeColumn", "Время заполнения (100000 элементов), мс");
+            dataGridView2.Columns["InsertTimeColumn"].Width = 220;
 
             dataGridView2.Columns.Add("SequentialReadTimeColumn", "Время последовательного чтения, мс");
-            dataGridView2.Columns["SequentialReadTimeColumn"].Width = 180;
+            dataGridView2.Columns["SequentialReadTimeColumn"].Width = 200;
 
-            dataGridView2.Columns.Add("RandomReadTimeColumn", "Время случайного чтения, мс");
-            dataGridView2.Columns["RandomReadTimeColumn"].Width = 150;
-        }
+            dataGridView2.Columns.Add("MemoryUsageColumn", "Использование памяти, МБ");
+            dataGridView2.Columns["MemoryUsageColumn"].Width = 160;
 
-        private void UpdateDataGridView()
-        {
-            // Проверяем, что dataGridView1 существует
-            if (dataGridView1 == null || dataGridView1.IsDisposed)
-                return;
+            dataGridView2.Columns.Add("AddElementTimeColumn", "Время добавления 1 элемента, мкс");
+            dataGridView2.Columns["AddElementTimeColumn"].Width = 180;
 
-            // Получаем все станции в правильном порядке
-            var stations = _stationContainer.GetAllStations();
-            // Преобразуем Stack в List для правильного отображения
-            var stationList = stations.Reverse().ToList();
+            dataGridView2.Columns.Add("RemoveElementTimeColumn", "Время удаления 1 элемента, мкс");
+            dataGridView2.Columns["RemoveElementTimeColumn"].Width = 180;
 
-            dataGridView1.Rows.Clear();
-
-            foreach (var station in stationList)
-            {
-                dataGridView1.Rows.Add(
-                    station.Title,
-                    station.NumberOfSeats,
-                    station.SoldTickets,
-                    station.Number,
-                    station.AverageAttendace,
-                    station.DateOfOpening.ToShortDateString(),
-                    station.Address
-                );
-            }
-
-            // Обновляем информацию о количестве
-            if (InfoLabel != null && !InfoLabel.IsDisposed)
-            {
-                InfoLabel.Text = $"Всего станций: {_stationContainer.CountOfStation(null)}";
-            }
+            dataGridView2.Columns.Add("PeekTimeColumn", "Время доступа к вершине, мкс");
+            dataGridView2.Columns["PeekTimeColumn"].Width = 160;
         }
 
         private void PopulateComboBox()
@@ -129,6 +107,38 @@ namespace Lr1
                 FindParamsComboBox.SelectedIndex = 0;
         }
 
+        #endregion
+
+        #region Работа с основным контейнером
+
+        private void UpdateDataGridView()
+        {
+            if (dataGridView1 == null || dataGridView1.IsDisposed)
+                return;
+
+            dataGridView1.Rows.Clear();
+
+            // Отображаем элементы стека в порядке LIFO (последний добавленный - первый)
+            foreach (var station in _stationContainer.GetAllStations())
+            {
+                dataGridView1.Rows.Add(
+                    station.Title,
+                    station.NumberOfSeats,
+                    station.SoldTickets,
+                    station.Number,
+                    station.AverageAttendace,
+                    station.DateOfOpening.ToShortDateString(),
+                    station.Address
+                );
+            }
+
+            // Обновляем информацию о количестве
+            if (InfoLabel != null && !InfoLabel.IsDisposed)
+            {
+                InfoLabel.Text = $"Всего станций: {_stationContainer.CountOfStation(null)}";
+            }
+        }
+
         private void FindButton_Click(object sender, EventArgs e)
         {
             string param = FindParamsComboBox.SelectedItem?.ToString();
@@ -140,12 +150,15 @@ namespace Lr1
                 return;
             }
 
-            var stations = _stationContainer.GetAllStations();
-            var stationList = stations.Reverse().ToList();
-            var filteredList = new List<Station>();
+            // Создаем временный стек для поиска без преобразования в List
+            var stationsStack = _stationContainer.GetAllStations();
+            var tempStack = new Stack<Station>(stationsStack); // Копия для безопасного перебора
+            var foundStations = new Stack<Station>(); // Стек для найденных станций
 
-            foreach (var station in stationList)
+            // Перебираем элементы стека
+            while (tempStack.Count > 0)
             {
+                var station = tempStack.Pop();
                 bool matches = false;
 
                 switch (param)
@@ -176,14 +189,46 @@ namespace Lr1
                 }
 
                 if (matches)
-                    filteredList.Add(station);
+                {
+                    foundStations.Push(station); // Сохраняем в порядке стека
+                }
             }
 
-            // Отображаем отфильтрованный список
-            DisplayStations(filteredList);
+            // Отображаем найденные станции
+            DisplayFoundStations(foundStations);
         }
 
-        // Вспомогательные методы для проверки условий
+        private void DisplayFoundStations(Stack<Station> stations)
+        {
+            if (dataGridView1 == null || dataGridView1.IsDisposed)
+                return;
+
+            dataGridView1.Rows.Clear();
+
+            // Отображаем найденные станции в порядке стека
+            foreach (var station in stations)
+            {
+                dataGridView1.Rows.Add(
+                    station.Title,
+                    station.NumberOfSeats,
+                    station.SoldTickets,
+                    station.Number,
+                    station.AverageAttendace,
+                    station.DateOfOpening.ToShortDateString(),
+                    station.Address
+                );
+            }
+
+            if (InfoLabel != null && !InfoLabel.IsDisposed)
+            {
+                InfoLabel.Text = $"Найдено станций: {stations.Count}";
+            }
+        }
+
+        #endregion
+
+        #region Вспомогательные методы для поиска
+
         private bool CheckNumberCondition(int? value, string conditionString, string defaultOperator = ">=")
         {
             if (!value.HasValue)
@@ -267,31 +312,9 @@ namespace Lr1
             return false;
         }
 
-        private void DisplayStations(List<Station> stations)
-        {
-            if (dataGridView1 == null || dataGridView1.IsDisposed)
-                return;
+        #endregion
 
-            dataGridView1.Rows.Clear();
-
-            foreach (var station in stations)
-            {
-                dataGridView1.Rows.Add(
-                    station.Title,
-                    station.NumberOfSeats,
-                    station.SoldTickets,
-                    station.Number,
-                    station.AverageAttendace,
-                    station.DateOfOpening.ToShortDateString(),
-                    station.Address
-                );
-            }
-
-            if (InfoLabel != null && !InfoLabel.IsDisposed)
-            {
-                InfoLabel.Text = $"Найдено станций: {stations.Count}";
-            }
-        }
+        #region События контейнера
 
         private void OnStationAdded(object sender, StationContainer.StationEventArgs e)
         {
@@ -323,26 +346,9 @@ namespace Lr1
             }
         }
 
-        private void FindParamsComboBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (ParamTextBox != null)
-                ParamTextBox.Clear();
-            UpdateDataGridView();
-        }
+        #endregion
 
-        private void ContainerForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if (_stationContainer != null)
-            {
-                _stationContainer.StationAdded -= OnStationAdded;
-                _stationContainer.StationRemoved -= OnStationRemoved;
-            }
-        }
-
-        private void ContainerForm_Load(object sender, EventArgs e)
-        {
-            // Уже инициализировано в конструкторе
-        }
+        #region Тестирование производительности
 
         private void CompareButton_Click(object sender, EventArgs e)
         {
@@ -356,59 +362,175 @@ namespace Lr1
             // Очищаем таблицу сравнения
             dataGridView2.Rows.Clear();
 
-            // Создаем массив (List) и ваш контейнер
-            List<Station> arrayList = new List<Station>();
-            StationContainer stationContainer = new StationContainer();
+            // Освобождаем предыдущий тестовый контейнер
+            _testContainer = null;
 
-            // Опционально: отключаем события в контейнере для повышения производительности
-            stationContainer.EnableEvents = false;
+            // Принудительный сбор мусора для чистоты измерений
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
 
-            // Замер времени внесения данных (100000 элементов)
-            var insertArrayTime = MeasureInsertTime(arrayList);
-            var insertContainerTime = MeasureInsertTime(stationContainer);
+            // СОЗДАЕМ НОВЫЙ КОНТЕЙНЕР ДЛЯ ТЕСТА
+            _testContainer = new StationContainer();
+            _testContainer.EnableEvents = false; // Отключаем события для чистоты сравнения
 
-            // Замер времени последовательного чтения
-            var sequentialArrayTime = MeasureSequentialReadTime(arrayList);
-            var sequentialContainerTime = MeasureSequentialReadTime(stationContainer);
+            // СОЗДАЕМ МАССИВ (Array) для сравнения
+            Station[] array = new Station[100000];
 
-            // Замер времени случайного чтения
-            var randomArrayTime = MeasureRandomReadTime(arrayList);
-            var randomContainerTime = MeasureRandomReadTime(stationContainer);
+            // Выполняем все тесты
+            PerformAllTests(array, _testContainer);
+
+            // Освобождаем тестовый контейнер
+            _testContainer = null;
+            GC.Collect();
+        }
+
+        private void PerformAllTests(Station[] array, StationContainer container)
+        {
+            // Тест 1: Замер времени заполнения
+            var insertArrayTime = MeasureInsertTime(array);
+            var insertContainerTime = MeasureInsertTime(container);
+
+            // Тест 2: Замер времени последовательного чтения
+            var sequentialArrayTime = MeasureSequentialReadTime(array);
+            var sequentialContainerTime = MeasureSequentialReadTime(container);
+
+            // Тест 3: Замер использования памяти
+            var memoryArray = MeasureMemoryUsageArray();
+            var memoryContainer = MeasureMemoryUsageContainer();
+
+            // Тест 4: Замер времени добавления одного элемента
+            var addElementArrayTime = MeasureAddElementTimeArray();
+            var addElementContainerTime = MeasureAddElementTimeContainer();
+
+            // Тест 5: Замер времени удаления одного элемента
+            var removeElementArrayTime = MeasureRemoveElementTimeArray();
+            var removeElementContainerTime = MeasureRemoveElementTimeContainer();
+
+            // Тест 6: Замер времени доступа к вершине (только для контейнера)
+            var peekContainerTime = MeasurePeekTimeContainer();
 
             // Выводим результаты в таблицу
             dataGridView2.Rows.Add(
-                "Массив (List<Station>)",
+                "Array",
                 $"{insertArrayTime.TotalMilliseconds:F2} мс",
                 $"{sequentialArrayTime.TotalMilliseconds:F2} мс",
-                $"{randomArrayTime.TotalMilliseconds:F2} мс"
+                $"{memoryArray:F2} МБ",
+                $"{(addElementArrayTime.TotalMilliseconds * 1000):F1} мкс",
+                $"{(removeElementArrayTime.TotalMilliseconds * 1000):F1} мкс",
+                "N/A" // Для массива нет операции Peek
             );
 
             dataGridView2.Rows.Add(
-                "Класс-контейнер (StationContainer)",
+                "StationContainer",
                 $"{insertContainerTime.TotalMilliseconds:F2} мс",
                 $"{sequentialContainerTime.TotalMilliseconds:F2} мс",
-                $"{randomContainerTime.TotalMilliseconds:F2} мс"
+                $"{memoryContainer:F2} МБ",
+                $"{(addElementContainerTime.TotalMilliseconds * 1000):F1} мкс",
+                $"{(removeElementContainerTime.TotalMilliseconds * 1000):F1} мкс",
+                $"{(peekContainerTime.TotalMilliseconds * 1000):F1} мкс"
             );
 
             // Обновляем отображение таблицы
             dataGridView2.Refresh();
+
         }
 
-        // Метод для замера времени внесения данных в массив
-        private TimeSpan MeasureInsertTime(List<Station> list)
+  
+
+        #region Методы тестирования для Array
+
+        private TimeSpan MeasureInsertTime(Station[] array)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            for (int i = 0; i < 100000; i++)
+            for (int i = 0; i < array.Length; i++)
             {
-                list.Add(CreateRandomStation(i));
+                array[i] = CreateRandomStation(i);
             }
 
             stopwatch.Stop();
             return stopwatch.Elapsed;
         }
 
-        // Метод для замера времени внесения данных в контейнер
+        private TimeSpan MeasureSequentialReadTime(Station[] array)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            int totalSeats = 0;
+            foreach (var station in array)
+            {
+                totalSeats += station.NumberOfSeats ?? 0;
+            }
+
+            stopwatch.Stop();
+            Debug.WriteLine($"Array sequential read - total seats: {totalSeats}");
+            return stopwatch.Elapsed;
+        }
+
+        private double MeasureMemoryUsageArray()
+        {
+            // Замеряем память, занимаемую массивом из 100000 элементов
+            long memoryBefore = GC.GetTotalMemory(true);
+
+            Station[] testArray = new Station[100000];
+            for (int i = 0; i < 100000; i++)
+            {
+                testArray[i] = CreateRandomStation(i);
+            }
+
+            long memoryAfter = GC.GetTotalMemory(true);
+
+            // Очищаем
+            testArray = null;
+            GC.Collect();
+
+            return (memoryAfter - memoryBefore) / (1024.0 * 1024.0); // В МБ
+        }
+
+        private TimeSpan MeasureAddElementTimeArray()
+        {
+            // Для массива добавление элемента требует создания нового массива большего размера
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            Station[] smallArray = new Station[1000];
+            for (int i = 0; i < 1000; i++)
+            {
+                smallArray[i] = CreateRandomStation(i);
+            }
+
+            // Добавляем один элемент
+            Station[] newArray = new Station[1001];
+            Array.Copy(smallArray, newArray, 1000);
+            newArray[1000] = CreateRandomStation(1000);
+
+            stopwatch.Stop();
+            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 1000); // Среднее время
+        }
+
+        private TimeSpan MeasureRemoveElementTimeArray()
+        {
+            // Для массива удаление элемента требует создания нового массива меньшего размера
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            Station[] smallArray = new Station[1000];
+            for (int i = 0; i < 1000; i++)
+            {
+                smallArray[i] = CreateRandomStation(i);
+            }
+
+            // Удаляем последний элемент
+            Station[] newArray = new Station[999];
+            Array.Copy(smallArray, newArray, 999);
+
+            stopwatch.Stop();
+            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 1000); // Среднее время
+        }
+
+        #endregion
+
+        #region Методы тестирования для StationContainer
+
         private TimeSpan MeasureInsertTime(StationContainer container)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -422,105 +544,164 @@ namespace Lr1
             return stopwatch.Elapsed;
         }
 
-        // Метод для замера времени последовательного чтения из массива
-        private TimeSpan MeasureSequentialReadTime(List<Station> list)
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            int totalSeats = 0;
-            foreach (var station in list)
-            {
-                totalSeats += station.NumberOfSeats ?? 0;
-            }
-
-            stopwatch.Stop();
-
-            Debug.WriteLine($"Total seats in array: {totalSeats}");
-
-            return stopwatch.Elapsed;
-        }
-
-        // Метод для замера времени последовательного чтения из контейнера
         private TimeSpan MeasureSequentialReadTime(StationContainer container)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             int totalSeats = 0;
-            var allStations = container.GetAllStations();
-
-            foreach (var station in allStations)
+            foreach (var station in container.GetAllStations())
             {
                 totalSeats += station.NumberOfSeats ?? 0;
             }
 
             stopwatch.Stop();
-
-            Debug.WriteLine($"Total seats in container: {totalSeats}");
-
+            Debug.WriteLine($"Container sequential read - total seats: {totalSeats}");
             return stopwatch.Elapsed;
         }
 
-        // Метод для замера времени случайного чтения из массива
-        private TimeSpan MeasureRandomReadTime(List<Station> list)
+        private double MeasureMemoryUsageContainer()
+        {
+            // Замеряем память, занимаемую контейнером с 100000 элементов
+            long memoryBefore = GC.GetTotalMemory(true);
+
+            StationContainer testContainer = new StationContainer();
+            testContainer.EnableEvents = false;
+
+            for (int i = 0; i < 100000; i++)
+            {
+                testContainer.AddStation(CreateRandomStation(i));
+            }
+
+            long memoryAfter = GC.GetTotalMemory(true);
+
+            // Очищаем
+            testContainer = null;
+            GC.Collect();
+
+            return (memoryAfter - memoryBefore) / (1024.0 * 1024.0); // В МБ
+        }
+
+        private TimeSpan MeasureAddElementTimeContainer()
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            int totalSeats = 0;
-            for (int i = 0; i < 1000; i++) // Уменьшил до 1000 для скорости
+            StationContainer testContainer = new StationContainer();
+            testContainer.EnableEvents = false;
+
+            // Добавляем 10000 элементов и замеряем общее время
+            for (int i = 0; i < 10000; i++)
             {
-                int randomIndex = _random.Next(0, list.Count);
-                totalSeats += list[randomIndex].NumberOfSeats ?? 0;
+                testContainer.AddStation(CreateRandomStation(i));
             }
 
             stopwatch.Stop();
-
-            Debug.WriteLine($"Random read total seats in array: {totalSeats}");
-
-            return stopwatch.Elapsed;
+            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 10000); // Среднее время на один элемент
         }
 
-        // Метод для замера времени случайного чтения из контейнера
-        private TimeSpan MeasureRandomReadTime(StationContainer container)
+        private TimeSpan MeasureRemoveElementTimeContainer()
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            var stations = container.GetAllStations().Reverse().ToList();
+            StationContainer testContainer = new StationContainer();
+            testContainer.EnableEvents = false;
 
-            int totalSeats = 0;
-            for (int i = 0; i < 1000; i++) // Уменьшил до 1000 для скорости
+            // Добавляем 10000 элементов
+            for (int i = 0; i < 10000; i++)
             {
-                int randomIndex = _random.Next(0, stations.Count);
-                totalSeats += stations[randomIndex].NumberOfSeats ?? 0;
+                testContainer.AddStation(CreateRandomStation(i));
+            }
+
+            // Удаляем все элементы по одному
+            while (testContainer.AnyStations())
+            {
+                testContainer.RemoveStation(testContainer.Peek());
             }
 
             stopwatch.Stop();
-
-            Debug.WriteLine($"Random read total seats in container: {totalSeats}");
-
-            return stopwatch.Elapsed;
+            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 10000); // Среднее время на один элемент
         }
 
-        // Метод для создания случайной станции
+        private TimeSpan MeasurePeekTimeContainer()
+        {
+            StationContainer testContainer = new StationContainer();
+            testContainer.EnableEvents = false;
+
+            // Добавляем один элемент для теста
+            testContainer.AddStation(CreateRandomStation(0));
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            // Выполняем операцию Peek много раз
+            for (int i = 0; i < 100000; i++)
+            {
+                var station = testContainer.Peek();
+            }
+
+            stopwatch.Stop();
+            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 100000); // Среднее время
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Создание тестовых данных
+
         private Station CreateRandomStation(int index)
         {
-            string[] stations = { "Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань",
-                                  "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону" };
-            string[] addresses = { "ул. Ленина", "пр. Победы", "ул. Советская", "ул. Мира", "пр. Ленина" };
+            string[] stationNames = {
+                "Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань",
+                "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону"
+            };
+
+            string[] streetTypes = { "ул.", "пр.", "б-р", "ш.", "наб." };
+            string[] streetNames = { "Ленина", "Победы", "Советская", "Мира", "Гагарина", "Кирова", "Лесная", "Центральная" };
 
             return new Station(
-                $"{stations[_random.Next(stations.Length)]}-{index}",
-                _random.Next(50, 500),
-                _random.Next(0, 100),
-                $"+7{_random.Next(900, 999)}{_random.Next(1000000, 9999999):D7}",
-                _random.NextDouble() * 100,
-                DateTime.Now.AddDays(-_random.Next(0, 3650)),
-                $"{addresses[_random.Next(addresses.Length)]} {_random.Next(1, 100)}"
+                $"{stationNames[_random.Next(stationNames.Length)]}-{index}",
+                _random.Next(50, 500), // Количество мест
+                _random.Next(0, 100), // Проданные билеты
+                $"+7{_random.Next(900, 999)}{_random.Next(1000000, 9999999):D7}", // Телефон
+                _random.NextDouble() * 100, // Средняя посещаемость
+                DateTime.Now.AddDays(-_random.Next(0, 3650)), // Дата открытия
+                $"{streetTypes[_random.Next(streetTypes.Length)]} {streetNames[_random.Next(streetNames.Length)]}, {_random.Next(1, 100)}" // Адрес
             );
+        }
+
+        #endregion
+
+        #region Обработчики событий формы
+
+        private void FindParamsComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (ParamTextBox != null)
+                ParamTextBox.Clear();
+            UpdateDataGridView();
+        }
+
+        private void ContainerForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // Отписываемся от событий
+            if (_stationContainer != null)
+            {
+                _stationContainer.StationAdded -= OnStationAdded;
+                _stationContainer.StationRemoved -= OnStationRemoved;
+            }
+
+            // Освобождаем тестовый контейнер
+            _testContainer = null;
+        }
+
+        private void ContainerForm_Load(object sender, EventArgs e)
+        {
+            // Дополнительная инициализация, если нужна
         }
 
         private void dataGridView2_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             // Пустая реализация, если не нужна
         }
+
+        #endregion
     }
 }
