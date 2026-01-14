@@ -34,7 +34,8 @@ namespace Lr1
             OnStationRemoved(new StationEventArgs { Station = station });
         }
 
-        public int CountOfStation(Station station)
+
+        public int CountOfStation()
         {
             return _stations.Count();
         }
