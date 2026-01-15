@@ -12,7 +12,7 @@ namespace Lr1
     public partial class MainForm : Form
     {
         /// <summary>
-        /// Список станций
+        /// РЎРїРёСЃРѕРє СЃС‚Р°РЅС†РёР№
         /// </summary>
         /// 
 
@@ -21,21 +21,21 @@ namespace Lr1
         public MainForm()
         {
             InitializeComponent();
-            _stations.AddStation(new Station("Пенза-1", 120, 3020, "+79875634543", 78.6, DateTime.Now, "Володарского 12"));
-            _stations.AddStation(new Station("Пенза-2", 10, 3020, "+79888888883", 234.9, DateTime.Now, "Володарского 13"));
-            _stations.AddStation(new Station("Пенза-3", 12370, 3020, "+71234567890", 13.2, DateTime.Now, "Володарского 14"));
+            _stations.AddStation(new Station("РџРµРЅР·Р°-1", 120, 3020, "+79875634543", 78.6, DateTime.Now, "Р’РѕР»РѕРґР°СЂСЃРєРѕРіРѕ 12"));
+            _stations.AddStation(new Station("РџРµРЅР·Р°-2", 10, 3020, "+79888888883", 234.9, DateTime.Now, "Р’РѕР»РѕРґР°СЂСЃРєРѕРіРѕ 13"));
+            _stations.AddStation(new Station("РџРµРЅР·Р°-3", 12370, 3020, "+71234567890", 13.2, DateTime.Now, "Р’РѕР»РѕРґР°СЂСЃРєРѕРіРѕ 14"));
 
         }
 
         /// <summary>
-        /// Метод, вызываемый при загрузке формы
+        /// РњРµС‚РѕРґ, РІС‹Р·С‹РІР°РµРјС‹Р№ РїСЂРё Р·Р°РіСЂСѓР·РєРµ С„РѕСЂРјС‹
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
 
 
         /// <summary>
-        /// Метод проверяет текстбоксы на пустоту
+        /// РњРµС‚РѕРґ РїСЂРѕРІРµСЂСЏРµС‚ С‚РµРєСЃС‚Р±РѕРєСЃС‹ РЅР° РїСѓСЃС‚РѕС‚Сѓ
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -53,15 +53,15 @@ namespace Lr1
         }
 
         /// <summary>
-        /// Метод устанавливает отображает информацию в виде строки
+        /// РњРµС‚РѕРґ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РѕС‚РѕР±СЂР°Р¶Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ РІ РІРёРґРµ СЃС‚СЂРѕРєРё
         /// </summary>
         private void SetInfo()
         {
-            Info.Text = $"Всего станций: {Station.TotalStations}\n{_stations.Peek()}";
+            Info.Text = $"Р’СЃРµРіРѕ СЃС‚Р°РЅС†РёР№: {Station.TotalStations}\n{_stations.Peek()}";
         }
 
         /// <summary>
-        /// Метод устанавливает в текстбоксы поля выбранного вокзала
+        /// РњРµС‚РѕРґ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ РІ С‚РµРєСЃС‚Р±РѕРєСЃС‹ РїРѕР»СЏ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РІРѕРєР·Р°Р»Р°
         /// </summary>
         private void SetStationInfo()
         {
@@ -69,21 +69,21 @@ namespace Lr1
             Station station = _stations.Peek();
             if (!_stations.AnyStations())
             {
-                // Если стек пуст, очищаем текстовые поля и деактивируем кнопки
+                // Р•СЃР»Рё СЃС‚РµРє РїСѓСЃС‚, РѕС‡РёС‰Р°РµРј С‚РµРєСЃС‚РѕРІС‹Рµ РїРѕР»СЏ Рё РґРµР°РєС‚РёРІРёСЂСѓРµРј РєРЅРѕРїРєРё
                 Title.Text = station.Title; ;
                 NumberOfSeats.Text = station.NumberOfSeats.ToString();
                 SoldTickets.Text = station.SoldTickets.ToString();
                 Number.Text = station.Number;
                 AverageAttendace.Text = station.AverageAttendace.ToString();
-                DateOfOpening.Value = station.DateOfOpening; // Устанавливаем текущую дату по умолчанию
+                DateOfOpening.Value = station.DateOfOpening; // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј С‚РµРєСѓС‰СѓСЋ РґР°С‚Сѓ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
                 Address.Text = station.Address;
 
-                // Деактивируем кнопки, так как нет данных для отображения
+                // Р”РµР°РєС‚РёРІРёСЂСѓРµРј РєРЅРѕРїРєРё, С‚Р°Рє РєР°Рє РЅРµС‚ РґР°РЅРЅС‹С… РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
                 UpdateStationBtn.Enabled = false;
                 AddNewStationBtn.Enabled = false;
 
-                // Обновляем информацию о количестве станций
-                Info.Text = "Всего станций: 0\nНет данных для отображения";
+                // РћР±РЅРѕРІР»СЏРµРј РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РєРѕР»РёС‡РµСЃС‚РІРµ СЃС‚Р°РЅС†РёР№
+                Info.Text = "Р’СЃРµРіРѕ СЃС‚Р°РЅС†РёР№: 0\nРќРµС‚ РґР°РЅРЅС‹С… РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ";
                 return;
             }
 
@@ -95,7 +95,7 @@ namespace Lr1
             DateOfOpening.Value = station.DateOfOpening;
             Address.Text = station.Address;
             SetInfo();
-            Info.Text += "Количество мест: " + station.NumberOfSeats;
+            Info.Text += "РљРѕР»РёС‡РµСЃС‚РІРѕ РјРµСЃС‚: " + station.NumberOfSeats;
         }
 
         private void Stations_SelectedIndexChanged(object sender, EventArgs e)
@@ -104,8 +104,8 @@ namespace Lr1
         }
 
         /// <summary>
-        /// Метод вызызывается при нажатии на кнопку "Сохранить"
-        /// Обновляет поля выбранного вокзала
+        /// РњРµС‚РѕРґ РІС‹Р·С‹Р·С‹РІР°РµС‚СЃСЏ РїСЂРё РЅР°Р¶Р°С‚РёРё РЅР° РєРЅРѕРїРєСѓ "РЎРѕС…СЂР°РЅРёС‚СЊ"
+        /// РћР±РЅРѕРІР»СЏРµС‚ РїРѕР»СЏ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РІРѕРєР·Р°Р»Р°
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -122,11 +122,11 @@ namespace Lr1
             }
             catch (FormatException)
             {
-                MessageBox.Show("Неправильные числовые данные", "Ошибка");
+                MessageBox.Show("РќРµРїСЂР°РІРёР»СЊРЅС‹Рµ С‡РёСЃР»РѕРІС‹Рµ РґР°РЅРЅС‹Рµ", "РћС€РёР±РєР°");
             }
             catch (NegativeValueException ex)
             {
-                MessageBox.Show(ex.Message, "Ошибка");
+                MessageBox.Show(ex.Message, "РћС€РёР±РєР°");
             }
             try
             {
@@ -134,7 +134,7 @@ namespace Lr1
             }
             catch (WrongNumberFormatException ex)
             {
-                MessageBox.Show(ex.Message, "Ошибка");
+                MessageBox.Show(ex.Message, "РћС€РёР±РєР°");
             }
             try
             {
@@ -142,18 +142,18 @@ namespace Lr1
             }
             catch (InvalidDateOfOpeningException ex)
             {
-                MessageBox.Show(ex.Message, "Ошибка");
+                MessageBox.Show(ex.Message, "РћС€РёР±РєР°");
             }
             station.Address = Address.Text;
             TicketsInHex.Text = station.NumberOfSeatsToHex();
             _stations.AddStation(station);
             SetInfo();
-            Info.Text += "Количество мест: " + station.NumberOfSeats;
+            Info.Text += "РљРѕР»РёС‡РµСЃС‚РІРѕ РјРµСЃС‚: " + station.NumberOfSeats;
         }
 
         /// <summary>
-        /// Метод вызызывается при нажатии на кнопку "Добавить новый"
-        /// Создаёт новый вокзал и добавляет его в список вокзалов
+        /// РњРµС‚РѕРґ РІС‹Р·С‹Р·С‹РІР°РµС‚СЃСЏ РїСЂРё РЅР°Р¶Р°С‚РёРё РЅР° РєРЅРѕРїРєСѓ "Р”РѕР±Р°РІРёС‚СЊ РЅРѕРІС‹Р№"
+        /// РЎРѕР·РґР°С‘С‚ РЅРѕРІС‹Р№ РІРѕРєР·Р°Р» Рё РґРѕР±Р°РІР»СЏРµС‚ РµРіРѕ РІ СЃРїРёСЃРѕРє РІРѕРєР·Р°Р»РѕРІ
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -161,7 +161,7 @@ namespace Lr1
         {
             
 
-            Station station = new Station("Новый вокзал");
+            Station station = new Station("РќРѕРІС‹Р№ РІРѕРєР·Р°Р»");
 
             try
             {
@@ -172,12 +172,12 @@ namespace Lr1
             }
             catch (FormatException)
             {
-                MessageBox.Show("Неправильные числовые данные", "Ошибка");
+                MessageBox.Show("РќРµРїСЂР°РІРёР»СЊРЅС‹Рµ С‡РёСЃР»РѕРІС‹Рµ РґР°РЅРЅС‹Рµ", "РћС€РёР±РєР°");
                 return;
             }
             catch (NegativeValueException ex)
             {
-                MessageBox.Show(ex.Message, "Ошибка");
+                MessageBox.Show(ex.Message, "РћС€РёР±РєР°");
                 return;
             }
             try
@@ -186,7 +186,7 @@ namespace Lr1
             }
             catch (WrongNumberFormatException ex)
             {
-                MessageBox.Show(ex.Message, "Ошибка");
+                MessageBox.Show(ex.Message, "РћС€РёР±РєР°");
                 return;
             }
             try
@@ -195,14 +195,14 @@ namespace Lr1
             }
             catch (InvalidDateOfOpeningException ex)
             {
-                MessageBox.Show(ex.Message, "Ошибка");
+                MessageBox.Show(ex.Message, "РћС€РёР±РєР°");
                 return;
             }
             station.Address = Address.Text;
             TicketsInHex.Text = station.NumberOfSeatsToHex();
             _stations.AddStation(station);
             SetInfo();
-            Info.Text += "Количество мест: " + station.NumberOfSeats;
+            Info.Text += "РљРѕР»РёС‡РµСЃС‚РІРѕ РјРµСЃС‚: " + station.NumberOfSeats;
         }
 
 
@@ -211,7 +211,7 @@ namespace Lr1
         {
             DateOfOpening.Format = DateTimePickerFormat.Custom;
             DateOfOpening.CustomFormat = "dd MMM yyyy";
-            MessageBox.Show("Петряев и Маляев 23ВП1\nВариант 3", "Лабораторная работа №1");
+            MessageBox.Show("РџРµС‚СЂСЏРµРІ Рё РњР°Р»СЏРµРІ 23Р’Рџ1\nР’Р°СЂРёР°РЅС‚ 3", "Р›Р°Р±РѕСЂР°С‚РѕСЂРЅР°СЏ СЂР°Р±РѕС‚Р° в„–1");
             SetStationInfo();
         }
 
@@ -224,7 +224,7 @@ namespace Lr1
             }
             catch (MyDivideByZeroException ex)
             {
-                MessageBox.Show(ex.Message, "Ошибка");
+                MessageBox.Show(ex.Message, "РћС€РёР±РєР°");
             }
         }
 
