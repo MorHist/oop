@@ -24,11 +24,9 @@ namespace Lr1
 
             _stationContainer = stationContainer;
 
-            // Подписка на события
             _stationContainer.StationAdded += OnStationAdded;
             _stationContainer.StationRemoved += OnStationRemoved;
 
-            // Инициализация интерфейса
             InitializeDataGridView();
             InitializeCompareDataGridView();
             UpdateDataGridView();
@@ -39,11 +37,10 @@ namespace Lr1
 
         private void InitializeDataGridView()
         {
-            // Настройка DataGridView для станций
             dataGridView1.AutoGenerateColumns = false;
             dataGridView1.Columns.Clear();
 
-            // Добавление колонок
+
             dataGridView1.Columns.Add("Title", "Название");
             dataGridView1.Columns.Add("NumberOfSeats", "Количество мест");
             dataGridView1.Columns.Add("SoldTickets", "Проданные билеты");
@@ -55,7 +52,7 @@ namespace Lr1
 
         private void InitializeCompareDataGridView()
         {
-            // Проверяем, что dataGridView2 существует
+
             if (dataGridView2 == null)
             {
                 MessageBox.Show("dataGridView2 не инициализирован!", "Ошибка");
@@ -65,7 +62,7 @@ namespace Lr1
             dataGridView2.AutoGenerateColumns = false;
             dataGridView2.Columns.Clear();
 
-            // Добавление колонок для сравнения
+
             dataGridView2.Columns.Add("TypeColumn", "Тип контейнера");
             dataGridView2.Columns["TypeColumn"].Width = 180;
 
@@ -78,14 +75,6 @@ namespace Lr1
             dataGridView2.Columns.Add("MemoryUsageColumn", "Использование памяти, МБ");
             dataGridView2.Columns["MemoryUsageColumn"].Width = 160;
 
-            dataGridView2.Columns.Add("AddElementTimeColumn", "Время добавления 1 элемента, мкс");
-            dataGridView2.Columns["AddElementTimeColumn"].Width = 180;
-
-            dataGridView2.Columns.Add("RemoveElementTimeColumn", "Время удаления 1 элемента, мкс");
-            dataGridView2.Columns["RemoveElementTimeColumn"].Width = 180;
-
-            dataGridView2.Columns.Add("PeekTimeColumn", "Время доступа к вершине, мкс");
-            dataGridView2.Columns["PeekTimeColumn"].Width = 160;
         }
 
         private void PopulateComboBox()
@@ -132,10 +121,9 @@ namespace Lr1
                 );
             }
 
-            // Обновляем информацию о количестве
             if (InfoLabel != null && !InfoLabel.IsDisposed)
             {
-                InfoLabel.Text = $"Всего станций: {_stationContainer.CountOfStation(null)}";
+                InfoLabel.Text = $"Всего станций: {_stationContainer.CountOfStation()}";
             }
         }
 
@@ -150,15 +138,14 @@ namespace Lr1
                 return;
             }
 
-            // Создаем временный стек для поиска без преобразования в List
-            var stationsStack = _stationContainer.GetAllStations();
-            var tempStack = new Stack<Station>(stationsStack); // Копия для безопасного перебора
-            var foundStations = new Stack<Station>(); // Стек для найденных станций
-
-            // Перебираем элементы стека
-            while (tempStack.Count > 0)
+            StationContainer tempStack;
+            tempStack = _stationContainer;
+            var foundStations = new Stack<Station>();
+            int cnt = tempStack.CountOfStation();
+            while (cnt > 0)
             {
-                var station = tempStack.Pop();
+                var station = tempStack.Peek();
+                tempStack.RemoveStation(tempStack.Peek());
                 bool matches = false;
 
                 switch (param)
@@ -190,11 +177,11 @@ namespace Lr1
 
                 if (matches)
                 {
-                    foundStations.Push(station); // Сохраняем в порядке стека
+                    foundStations.Push(station);
                 }
+                cnt = tempStack.CountOfStation();
             }
 
-            // Отображаем найденные станции
             DisplayFoundStations(foundStations);
         }
 
@@ -205,7 +192,6 @@ namespace Lr1
 
             dataGridView1.Rows.Clear();
 
-            // Отображаем найденные станции в порядке стека
             foreach (var station in stations)
             {
                 dataGridView1.Rows.Add(
@@ -352,17 +338,14 @@ namespace Lr1
 
         private void CompareButton_Click(object sender, EventArgs e)
         {
-            // Проверяем, что dataGridView2 существует
             if (dataGridView2 == null)
             {
                 MessageBox.Show("Таблица сравнения не инициализирована!", "Ошибка");
                 return;
             }
 
-            // Очищаем таблицу сравнения
             dataGridView2.Rows.Clear();
 
-            // Освобождаем предыдущий тестовый контейнер
             _testContainer = null;
 
             // Принудительный сбор мусора для чистоты измерений
@@ -370,17 +353,12 @@ namespace Lr1
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            // СОЗДАЕМ НОВЫЙ КОНТЕЙНЕР ДЛЯ ТЕСТА
             _testContainer = new StationContainer();
-            _testContainer.EnableEvents = false; // Отключаем события для чистоты сравнения
+            _testContainer.EnableEvents = false; 
 
-            // СОЗДАЕМ МАССИВ (Array) для сравнения
             Station[] array = new Station[100000];
 
-            // Выполняем все тесты
             PerformAllTests(array, _testContainer);
-
-            // Освобождаем тестовый контейнер
             _testContainer = null;
             GC.Collect();
         }
@@ -399,36 +377,19 @@ namespace Lr1
             var memoryArray = MeasureMemoryUsageArray();
             var memoryContainer = MeasureMemoryUsageContainer();
 
-            // Тест 4: Замер времени добавления одного элемента
-            var addElementArrayTime = MeasureAddElementTimeArray();
-            var addElementContainerTime = MeasureAddElementTimeContainer();
 
-            // Тест 5: Замер времени удаления одного элемента
-            var removeElementArrayTime = MeasureRemoveElementTimeArray();
-            var removeElementContainerTime = MeasureRemoveElementTimeContainer();
-
-            // Тест 6: Замер времени доступа к вершине (только для контейнера)
-            var peekContainerTime = MeasurePeekTimeContainer();
-
-            // Выводим результаты в таблицу
             dataGridView2.Rows.Add(
                 "Array",
                 $"{insertArrayTime.TotalMilliseconds:F2} мс",
                 $"{sequentialArrayTime.TotalMilliseconds:F2} мс",
-                $"{memoryArray:F2} МБ",
-                $"{(addElementArrayTime.TotalMilliseconds * 1000):F1} мкс",
-                $"{(removeElementArrayTime.TotalMilliseconds * 1000):F1} мкс",
-                "N/A" // Для массива нет операции Peek
+                $"{memoryArray:F2} МБ"
             );
 
             dataGridView2.Rows.Add(
                 "StationContainer",
                 $"{insertContainerTime.TotalMilliseconds:F2} мс",
                 $"{sequentialContainerTime.TotalMilliseconds:F2} мс",
-                $"{memoryContainer:F2} МБ",
-                $"{(addElementContainerTime.TotalMilliseconds * 1000):F1} мкс",
-                $"{(removeElementContainerTime.TotalMilliseconds * 1000):F1} мкс",
-                $"{(peekContainerTime.TotalMilliseconds * 1000):F1} мкс"
+                $"{memoryContainer:F2} МБ"
             );
 
             // Обновляем отображение таблицы
@@ -470,7 +431,6 @@ namespace Lr1
 
         private double MeasureMemoryUsageArray()
         {
-            // Замеряем память, занимаемую массивом из 100000 элементов
             long memoryBefore = GC.GetTotalMemory(true);
 
             Station[] testArray = new Station[100000];
@@ -488,44 +448,6 @@ namespace Lr1
             return (memoryAfter - memoryBefore) / (1024.0 * 1024.0); // В МБ
         }
 
-        private TimeSpan MeasureAddElementTimeArray()
-        {
-            // Для массива добавление элемента требует создания нового массива большего размера
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            Station[] smallArray = new Station[1000];
-            for (int i = 0; i < 1000; i++)
-            {
-                smallArray[i] = CreateRandomStation(i);
-            }
-
-            // Добавляем один элемент
-            Station[] newArray = new Station[1001];
-            Array.Copy(smallArray, newArray, 1000);
-            newArray[1000] = CreateRandomStation(1000);
-
-            stopwatch.Stop();
-            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 1000); // Среднее время
-        }
-
-        private TimeSpan MeasureRemoveElementTimeArray()
-        {
-            // Для массива удаление элемента требует создания нового массива меньшего размера
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            Station[] smallArray = new Station[1000];
-            for (int i = 0; i < 1000; i++)
-            {
-                smallArray[i] = CreateRandomStation(i);
-            }
-
-            // Удаляем последний элемент
-            Station[] newArray = new Station[999];
-            Array.Copy(smallArray, newArray, 999);
-
-            stopwatch.Stop();
-            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 1000); // Среднее время
-        }
 
         #endregion
 
@@ -581,66 +503,6 @@ namespace Lr1
             return (memoryAfter - memoryBefore) / (1024.0 * 1024.0); // В МБ
         }
 
-        private TimeSpan MeasureAddElementTimeContainer()
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            StationContainer testContainer = new StationContainer();
-            testContainer.EnableEvents = false;
-
-            // Добавляем 10000 элементов и замеряем общее время
-            for (int i = 0; i < 10000; i++)
-            {
-                testContainer.AddStation(CreateRandomStation(i));
-            }
-
-            stopwatch.Stop();
-            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 10000); // Среднее время на один элемент
-        }
-
-        private TimeSpan MeasureRemoveElementTimeContainer()
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            StationContainer testContainer = new StationContainer();
-            testContainer.EnableEvents = false;
-
-            // Добавляем 10000 элементов
-            for (int i = 0; i < 10000; i++)
-            {
-                testContainer.AddStation(CreateRandomStation(i));
-            }
-
-            // Удаляем все элементы по одному
-            while (testContainer.AnyStations())
-            {
-                testContainer.RemoveStation(testContainer.Peek());
-            }
-
-            stopwatch.Stop();
-            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 10000); // Среднее время на один элемент
-        }
-
-        private TimeSpan MeasurePeekTimeContainer()
-        {
-            StationContainer testContainer = new StationContainer();
-            testContainer.EnableEvents = false;
-
-            // Добавляем один элемент для теста
-            testContainer.AddStation(CreateRandomStation(0));
-
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            // Выполняем операцию Peek много раз
-            for (int i = 0; i < 100000; i++)
-            {
-                var station = testContainer.Peek();
-            }
-
-            stopwatch.Stop();
-            return TimeSpan.FromTicks(stopwatch.Elapsed.Ticks / 100000); // Среднее время
-        }
-
         #endregion
 
         #endregion
@@ -681,25 +543,23 @@ namespace Lr1
 
         private void ContainerForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // Отписываемся от событий
             if (_stationContainer != null)
             {
                 _stationContainer.StationAdded -= OnStationAdded;
                 _stationContainer.StationRemoved -= OnStationRemoved;
             }
 
-            // Освобождаем тестовый контейнер
             _testContainer = null;
         }
 
         private void ContainerForm_Load(object sender, EventArgs e)
         {
-            // Дополнительная инициализация, если нужна
+ 
         }
 
         private void dataGridView2_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            // Пустая реализация, если не нужна
+
         }
 
         #endregion
