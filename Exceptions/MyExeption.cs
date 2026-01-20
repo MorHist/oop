@@ -1,17 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Lr1
+namespace Lr1.Exceptions
 {
     internal class MyExeption
     {
         private int a;
         private int b;
 
-        public MyExeption() 
+        public MyExeption()
         {
             a = 1;
             b = 0;
@@ -23,11 +19,10 @@ namespace Lr1
             {
                 int c = a / b;
             }
-            catch (DivideByZeroException) 
-            { 
+            catch (DivideByZeroException)
+            {
                 throw new MyDivideByZeroException();
             }
-
         }
     }
 
