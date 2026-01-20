@@ -217,6 +217,10 @@ namespace Lr1
                   
                 }
             }
+            station.Address = Address.Text;
+            TicketsInHex.Text = station.NumberOfSeatsToHex();
+            SetInfo();
+            Info.Text += "Количество мест: " + station.NumberOfSeats;
         }
         /// <summary>
         /// Обновляет свойства существующего объекта StationBase на основе нового объекта
