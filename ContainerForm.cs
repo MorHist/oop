@@ -8,10 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Lr1.Models;
-using Lr1.Service;
-using Lr1.Factories;
-using Lr1.Exceptions;
 
 namespace Lr1
 {
@@ -114,7 +110,15 @@ namespace Lr1
             // Отображаем элементы стека в порядке LIFO (последний добавленный - первый)
             foreach (var station in _stationContainer.GetAllStations())
             {
-                
+                dataGridView1.Rows.Add(
+                    station.Title,
+                    station.NumberOfSeats,
+                    station.SoldTickets,
+                    station.Number,
+                    station.AverageAttendace,
+                    station.DateOfOpening.ToShortDateString(),
+                    station.Address
+                );
             }
 
             if (InfoLabel != null && !InfoLabel.IsDisposed)
@@ -125,12 +129,86 @@ namespace Lr1
 
         private void FindButton_Click(object sender, EventArgs e)
         {
-            
+            string param = FindParamsComboBox.SelectedItem?.ToString();
+            string searchValue = ParamTextBox.Text.ToLower();
+
+            if (string.IsNullOrEmpty(param) || string.IsNullOrEmpty(searchValue))
+            {
+                UpdateDataGridView();
+                return;
+            }
+
+            StationContainer tempStack;
+            tempStack = _stationContainer;
+            var foundStations = new Stack<Station>();
+            int cnt = tempStack.CountOfStation();
+            while (cnt > 0)
+            {
+                var station = tempStack.Peek();
+                tempStack.RemoveStation(tempStack.Peek());
+                bool matches = false;
+
+                switch (param)
+                {
+                    case "Название":
+                        matches = station.Title.ToLower().Contains(searchValue);
+                        break;
+
+                    case "Количество мест":
+                        matches = CheckNumberCondition(station.NumberOfSeats, searchValue, ">=");
+                        break;
+
+                    case "Проданные билеты":
+                        matches = CheckNumberCondition(station.SoldTickets, searchValue, ">=");
+                        break;
+
+                    case "Телефон":
+                        matches = station.Number.ToLower().Contains(searchValue);
+                        break;
+
+                    case "Средняя посещаемость":
+                        matches = CheckDoubleCondition(station.AverageAttendace, searchValue, ">=");
+                        break;
+
+                    case "Адрес":
+                        matches = station.Address.ToLower().Contains(searchValue);
+                        break;
+                }
+
+                if (matches)
+                {
+                    foundStations.Push(station);
+                }
+                cnt = tempStack.CountOfStation();
+            }
+
+            DisplayFoundStations(foundStations);
         }
 
-        private void DisplayFoundStations(Stack<RailwayStation> stations)
+        private void DisplayFoundStations(Stack<Station> stations)
         {
-            
+            if (dataGridView1 == null || dataGridView1.IsDisposed)
+                return;
+
+            dataGridView1.Rows.Clear();
+
+            foreach (var station in stations)
+            {
+                dataGridView1.Rows.Add(
+                    station.Title,
+                    station.NumberOfSeats,
+                    station.SoldTickets,
+                    station.Number,
+                    station.AverageAttendace,
+                    station.DateOfOpening.ToShortDateString(),
+                    station.Address
+                );
+            }
+
+            if (InfoLabel != null && !InfoLabel.IsDisposed)
+            {
+                InfoLabel.Text = $"Найдено станций: {stations.Count}";
+            }
         }
 
         #endregion
@@ -278,14 +356,14 @@ namespace Lr1
             _testContainer = new StationContainer();
             _testContainer.EnableEvents = false; 
 
-            RailwayStation[] array = new RailwayStation[100000];
+            Station[] array = new Station[100000];
 
             PerformAllTests(array, _testContainer);
             _testContainer = null;
             GC.Collect();
         }
 
-        private void PerformAllTests(RailwayStation[] array, StationContainer container)
+        private void PerformAllTests(Station[] array, StationContainer container)
         {
             // Тест 1: Замер времени заполнения
             var insertArrayTime = MeasureInsertTime(array);
@@ -323,17 +401,20 @@ namespace Lr1
 
         #region Методы тестирования для Array
 
-        private TimeSpan MeasureInsertTime(RailwayStation[] array)
+        private TimeSpan MeasureInsertTime(Station[] array)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-           
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = CreateRandomStation(i);
+            }
 
             stopwatch.Stop();
             return stopwatch.Elapsed;
         }
 
-        private TimeSpan MeasureSequentialReadTime(RailwayStation[] array)
+        private TimeSpan MeasureSequentialReadTime(Station[] array)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -352,8 +433,11 @@ namespace Lr1
         {
             long memoryBefore = GC.GetTotalMemory(true);
 
-            RailwayStation[] testArray = new RailwayStation[100000];
-            
+            Station[] testArray = new Station[100000];
+            for (int i = 0; i < 100000; i++)
+            {
+                testArray[i] = CreateRandomStation(i);
+            }
 
             long memoryAfter = GC.GetTotalMemory(true);
 
@@ -373,7 +457,10 @@ namespace Lr1
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            
+            for (int i = 0; i < 100000; i++)
+            {
+                container.AddStation(CreateRandomStation(i));
+            }
 
             stopwatch.Stop();
             return stopwatch.Elapsed;
@@ -384,7 +471,11 @@ namespace Lr1
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             int totalSeats = 0;
-           
+            foreach (var station in container.GetAllStations())
+            {
+                totalSeats += station.NumberOfSeats ?? 0;
+            }
+
             stopwatch.Stop();
             Debug.WriteLine($"Container sequential read - total seats: {totalSeats}");
             return stopwatch.Elapsed;
@@ -398,7 +489,10 @@ namespace Lr1
             StationContainer testContainer = new StationContainer();
             testContainer.EnableEvents = false;
 
-            
+            for (int i = 0; i < 100000; i++)
+            {
+                testContainer.AddStation(CreateRandomStation(i));
+            }
 
             long memoryAfter = GC.GetTotalMemory(true);
 
@@ -415,7 +509,26 @@ namespace Lr1
 
         #region Создание тестовых данных
 
-        
+        private Station CreateRandomStation(int index)
+        {
+            string[] stationNames = {
+                "Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань",
+                "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону"
+            };
+
+            string[] streetTypes = { "ул.", "пр.", "б-р", "ш.", "наб." };
+            string[] streetNames = { "Ленина", "Победы", "Советская", "Мира", "Гагарина", "Кирова", "Лесная", "Центральная" };
+
+            return new Station(
+                $"{stationNames[_random.Next(stationNames.Length)]}-{index}",
+                _random.Next(50, 500), // Количество мест
+                _random.Next(0, 100), // Проданные билеты
+                $"+7{_random.Next(900, 999)}{_random.Next(1000000, 9999999):D7}", // Телефон
+                _random.NextDouble() * 100, // Средняя посещаемость
+                DateTime.Now.AddDays(-_random.Next(0, 3650)), // Дата открытия
+                $"{streetTypes[_random.Next(streetTypes.Length)]} {streetNames[_random.Next(streetNames.Length)]}, {_random.Next(1, 100)}" // Адрес
+            );
+        }
 
         #endregion
 
