@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using static Lr1.Station;
 using static Lr1.StationContainer;
 using System.Drawing.Text;
+using Lr1.Interpreter;
 
 namespace Lr1
 {
@@ -98,11 +99,6 @@ namespace Lr1
             Info.Text += "Количество мест: " + station.NumberOfSeats;
         }
 
-        private void Stations_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            SetStationInfo();
-        }
-
         /// <summary>
         /// Метод вызызывается при нажатии на кнопку "Сохранить"
         /// Обновляет поля выбранного вокзала
@@ -111,7 +107,6 @@ namespace Lr1
         /// <param name="e"></param>
         private void UpdateStationBtn_Click(object sender, EventArgs e)
         {
-
             Station station = _stations.Peek();
             try
             {

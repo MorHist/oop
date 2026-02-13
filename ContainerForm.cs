@@ -1,13 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Lr1.Interpreter;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
 
 namespace Lr1
 {
@@ -15,13 +18,15 @@ namespace Lr1
     {
         private StationContainer _stationContainer;
         private Random _random = new Random();
+        private Label lblInterpreterStatus;
 
         // Конструктор, принимающий StationContainer
         public ContainerForm(StationContainer stationContainer)
         {
-            InitializeComponent(); // ДОЛЖЕН БЫТЬ ТОЛЬКО ОДИН РАЗ
+            InitializeComponent();
 
             _stationContainer = stationContainer;
+            btnInterpreterSearch.Click += btnInterpreterSearch_Click;
 
             // Подписка на события
             _stationContainer.StationAdded += OnStationAdded;
@@ -522,5 +527,68 @@ namespace Lr1
         {
             // Пустая реализация, если не нужна
         }
+
+        private void btnInterpreterSearch_Click(object sender, EventArgs e)
+        {
+            string query = txtInterpreterQuery.Text.Trim();
+
+            if (string.IsNullOrEmpty(query))
+            {
+                MessageBox.Show("Введите запрос для интерпретатора", "Ошибка");
+                return;
+            }
+
+            try
+            {
+                // Создаем интерпретатор и выполняем запрос
+                var interpreter = new StationQueryInterpreter();
+                var results = interpreter.ExecuteQuery(_stationContainer, query);
+
+                // Отображаем результаты в основном DataGridView
+                DisplayStations(results.ToList());
+
+
+                // Обновляем информацию
+                if (InfoLabel != null && !InfoLabel.IsDisposed)
+                {
+                    InfoLabel.Text = $"Результат интерпретатора: {results.Count()} вокзалов";
+                }
+
+                // Можно также показать примеры запросов в статусе
+                UpdateInterpreterHelp();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка в запросе интерпретатора:\n{ex.Message}\n\n" +
+                               "Примеры корректных запросов:\n" +
+                               "• seats > 100\n" +
+                               "• year < 2000\n" +
+                               "• title contai 'Пенза'\n" +
+                               "• seats > 50 AND year < 1990",
+                               "Ошибка интерпретатора",
+                               MessageBoxButtons.OK,
+                               MessageBoxIcon.Error);
+            }
+        }
+
+        private void UpdateInterpreterHelp()
+        {
+            // Примеры запросов для подсказки
+            string[] examples =
+            {
+        "seats > 100 - более 100 мест",
+        "year < 2000 - открыт до 2000 года",
+        "title contains 'Центральный' - в названии 'Центральный'",
+        "seats > 50 AND year < 1990 - более 50 мест И открыт до 1990",
+        "title contains 'Пенза' OR address contains 'Володарского'"
+            };
+        }
+
+        private void txtInterpreterQuery_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+
     }
 }
